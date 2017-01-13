@@ -26,7 +26,7 @@ class APTpy:
             sleep(0.5)
             if not self.queue_recv.empty():
                 cmd = self.queue_recv.get().strip()
-                print cmd
+                # print cmd
                 self.queue_recv.task_done()
                 for module in self.modules:
                     if module.its_for_me(cmd):

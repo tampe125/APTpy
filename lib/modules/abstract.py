@@ -28,6 +28,7 @@ class AbstractModule(threading.Thread):
 
     def its_for_me(self, cmd):
         if cmd.startswith(self.__class__.__name__):
+            cmd = cmd.split('|').pop()
             self.cmd = cmd
             return True
 
