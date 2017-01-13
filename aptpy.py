@@ -1,3 +1,5 @@
+import logging
+import logging.handlers
 import Queue
 from threading import Event
 from time import sleep
@@ -11,6 +13,28 @@ class APTpy:
         self.queue_send = Queue.Queue()
         self.queue_recv = Queue.Queue()
         self.events = {}
+
+        # Logging information
+        aptpy_logger = logging.getLogger('aptpy')
+        aptpy_logger.setLevel(logging.DEBUG)
+
+        # Create a rotation logging, so we won't have and endless file
+        rotate = logging.handlers.RotatingFileHandler('aptpy.log', maxBytes=(5 * 1024 * 1024), backupCount=3)
+        rotate.setLevel(logging.DEBUG)
+        rotate.setFormatter(logging.Formatter('%(asctime)s|%(levelname)-8s| %(message)s', '%Y-%m-%d %H:%M:%S'))
+
+        aptpy_logger.addHandler(rotate)
+
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+
+        console.setFormatter(logging.Formatter("%(asctime)s|%(levelname)-8s| %(message)s", '%Y-%m-%d %H:%M:%S'))
+        aptpy_logger.addHandler(console)
+
+        aptpy_logger.disabled = True
+
+        if DEBUG:
+            aptpy_logger.disabled = False
 
     def run(self):
         self._checkenv()
@@ -26,12 +50,18 @@ class APTpy:
             sleep(0.5)
             if not self.queue_recv.empty():
                 cmd = self.queue_recv.get().strip()
-                # print cmd
+
+                logging.getLogger('aptpy').info("Got command %s from the queue" % cmd)
+
                 self.queue_recv.task_done()
                 for module in self.modules:
                     if module.its_for_me(cmd):
-                        self.events[module.__class__.__name__].set()
-                        self.events[module.__class__.__name__].clear()
+                        className = module.__class__.__name__
+
+                        logging.getLogger('aptpy').info("Module %s reclaimed the message" % className)
+
+                        self.events[className].set()
+                        self.events[className].clear()
 
     def _checkenv(self):
         pass
