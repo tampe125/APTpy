@@ -18,7 +18,11 @@ class HttpChannel(AbstractChannel):
         return True
 
     def connect(self):
-        response = requests.post('https://localhost/APTserver/index.php', verify=False, data={'client_id': self.client_id})
+        response = requests.post('http://localhost:8000/',
+                                 verify=False,
+                                 json={'client_id': self.client_id},
+                                 cookies={'XDEBUG_SESSION': 'PHPSTORM'}
+                                 )
 
         if response.status_code != 200:
             raise NotAuthorized()
