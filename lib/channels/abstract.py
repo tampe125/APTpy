@@ -6,22 +6,20 @@ from abc import ABCMeta, abstractmethod
 class AbstractChannel(threading.Thread):
     __metaclass__ = ABCMeta
 
-    def __init__(self, queue_send, queue_recv):
+    def __init__(self, client_id, queue_send, queue_recv):
         super(AbstractChannel, self).__init__()
+        self.client_id = client_id
         self.connection = None
         self.connect()
         self.queue_send = queue_send
         self.queue_recv = queue_recv
 
-    @abstractmethod
     def connect(self):
         pass
 
-    @abstractmethod
     def send(self, message):
         pass
 
-    @abstractmethod
     def receive(self):
         pass
 
