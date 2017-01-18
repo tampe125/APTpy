@@ -1,3 +1,4 @@
+import logging
 import requests
 from lib.exceptions import *
 from abstract import AbstractChannel
@@ -18,14 +19,17 @@ class HttpChannel(AbstractChannel):
         return True
 
     def connect(self):
+        logging.getLogger('aptpy').debug("Trying to contact the remote server")
         response = requests.post('http://localhost:8000/',
-                                 verify=False,
-                                 json={'client_id': self.client_id},
+                                 json={'task': 'ping', 'client_id': self.client_id},
                                  cookies={'XDEBUG_SESSION': 'PHPSTORM'}
                                  )
 
         if response.status_code != 200:
+            logging.getLogger('aptpy').debug("We can't connect to the remote server")
             raise NotAuthorized()
+
+        logging.getLogger('aptpy').debug("Successfully connected to the remote server")
 
     def send(self, message):
         pass

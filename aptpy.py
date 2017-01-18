@@ -39,31 +39,56 @@ class APTpy:
             aptpy_logger.disabled = False
 
     def run(self):
+        logger = logging.getLogger('aptpy')
+
         self._checkenv()
+
+        logger.debug("Registering channels")
         self._registerChannels()
+
+        logger.debug("Registering modules")
         self._registerModules()
 
+        logger.debug("Starting channel connection")
         self.channel.start()
 
+        logger.debug("Starting all modules")
         for module in self.modules:
             module.start()
 
-        while True:
-            sleep(0.5)
-            if not self.queue_recv.empty():
-                cmd = self.queue_recv.get().strip()
+        try:
+            logger.debug("Starting main loop")
+            while True:
+                sleep(0.5)
 
-                logging.getLogger('aptpy').info("Got command %s from the queue" % cmd)
+                if not self.queue_recv.empty():
+                    cmd = self.queue_recv.get().strip()
 
-                self.queue_recv.task_done()
-                for module in self.modules:
-                    if module.its_for_me(cmd):
-                        className = module.__class__.__name__
+                    logger.info("Got command %s from the queue" % cmd)
 
-                        logging.getLogger('aptpy').info("Module %s reclaimed the message" % className)
+                    self.queue_recv.task_done()
 
-                        self.events[className].set()
-                        self.events[className].clear()
+                    for module in self.modules:
+                        if module.its_for_me(cmd):
+                            className = module.__class__.__name__
+
+                            logger.info("Module %s reclaimed the message" % className)
+
+                            self.events[className].set()
+                            self.events[className].clear()
+        except BaseException as inner_e:
+            logger.debug("Exception detected, try to stop all threads before bubbling up")
+
+            for module in self.modules:
+                className = module.__class__.__name__
+                module.halt()
+
+                self.events[className].set()
+                self.events[className].clear()
+
+                module.join()
+
+            raise inner_e
 
     def _checkenv(self):
         info = wmi.WMI()
@@ -84,6 +109,6 @@ class APTpy:
 try:
     obj = APTpy()
     obj.run()
-except Exception, e:
+except BaseException as e:
     if DEBUG:
         print "[!] Operation aborted: " + type(e).__name__ + e.message

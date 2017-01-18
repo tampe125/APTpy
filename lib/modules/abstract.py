@@ -12,10 +12,19 @@ class AbstractModule(threading.Thread):
         self.cmd = None
         self.queue_send = queue_send
         self.event = event
+        self.running = True
+
+    def halt(self):
+        self.running = False
 
     def run(self):
-        while True:
+        while self.running:
             self.event.wait()
+
+            # When I stop the execution, I'll have to raise the event flag for all modules,
+            # otherwise they will be stuck on the wait() method forever
+            if not self.running:
+                break
 
             # Add some sleep so the clear flag can propagate
             sleep(0.2)
