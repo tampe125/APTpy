@@ -20,16 +20,20 @@ class HttpChannel(AbstractChannel):
 
     def connect(self):
         logging.getLogger('aptpy').debug("Trying to contact the remote server")
-        response = requests.post('http://localhost:8000/',
-                                 json={'task': 'ping', 'client_id': self.client_id},
-                                 cookies={'XDEBUG_SESSION': 'PHPSTORM'}
-                                 )
 
-        if response.status_code != 200:
-            logging.getLogger('aptpy').debug("We can't connect to the remote server")
-            raise NotAuthorized()
+        try:
+            response = requests.post('http://localhost:8000/',
+                                     json={'task': 'ping', 'client_id': self.client_id},
+                                     cookies={'XDEBUG_SESSION': 'PHPSTORM'}
+                                     )
 
-        logging.getLogger('aptpy').debug("Successfully connected to the remote server")
+            if response.status_code != 200:
+                logging.getLogger('aptpy').debug("We can't connect to the remote server")
+                raise NotAuthorized()
+
+            logging.getLogger('aptpy').debug("Successfully connected to the remote server")
+        except requests.ConnectionError:
+            logging.getLogger('aptpy').debug("An error occurred while contacting the remote server")
 
     def send(self, message):
         pass

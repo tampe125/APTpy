@@ -111,4 +111,4 @@ try:
     obj.run()
 except BaseException as e:
     if DEBUG:
-        print "[!] Operation aborted: " + type(e).__name__ + e.message
+        print "[!] Operation aborted: " + str(type(e).__name__) + str(e.message)
