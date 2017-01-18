@@ -15,6 +15,9 @@ class AbstractChannel(threading.Thread):
         self.queue_recv = queue_recv
         self.running = True
 
+    def halt(self):
+        self.running = False
+
     def connect(self):
         pass
 

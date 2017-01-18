@@ -79,6 +79,9 @@ class APTpy:
         except BaseException as inner_e:
             logger.debug("Exception detected, try to stop all threads before bubbling up")
 
+            self.channel.halt()
+            self.channel.join()
+
             for module in self.modules:
                 className = module.__class__.__name__
                 module.halt()
