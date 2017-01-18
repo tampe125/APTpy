@@ -5,16 +5,6 @@ from abstract import AbstractChannel
 
 
 class HttpChannel(AbstractChannel):
-    def __init__(self, client_id, queue_send, queue_recv):
-        # Try to silence insecure platform warnings
-        try:
-            from requests.packages.urllib3.exceptions import InsecureRequestWarning
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-        except ImportError:
-            pass
-
-        super(HttpChannel, self).__init__(client_id, queue_send, queue_recv)
-
     def enabled(self):
         return True
 
