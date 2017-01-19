@@ -107,6 +107,7 @@ class APTpy:
             info = WMI()
             disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
 
+        logging.getLogger('aptpy').info("[MAIN] Client id: " + disk)
         self.client_id = disk
 
     def _registerChannels(self):

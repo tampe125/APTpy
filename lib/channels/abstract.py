@@ -78,7 +78,7 @@ class AbstractChannel(threading.Thread):
         Queries the remote server and fetches the new jobs to do
         :return:
         """
-        pass
+        return []
 
     def run(self):
         while self._running:
@@ -93,9 +93,10 @@ class AbstractChannel(threading.Thread):
 
                     # First of all let's get some more work
                     if self.queue_recv.empty():
-                        msg = self.receive()
-                        if msg:
-                            self.queue_recv.put(msg)
+                        messages = self.receive()
+                        if messages:
+                            for msg in messages:
+                                self.queue_recv.put(msg)
 
                     self._send()
                 # If we're not authorized stop everything
