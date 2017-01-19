@@ -63,7 +63,7 @@ class APTpy:
                 sleep(0.5)
 
                 if not self.queue_recv.empty():
-                    cmd = self.queue_recv.get().strip()
+                    cmd = self.queue_recv.get()
 
                     logger.info("[MAIN] Got command %s from the queue" % cmd)
 

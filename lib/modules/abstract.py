@@ -36,8 +36,7 @@ class AbstractModule(threading.Thread):
         pass
 
     def its_for_me(self, cmd):
-        if cmd.startswith(self.__class__.__name__):
-            cmd = cmd.split('|').pop()
+        if cmd.get('module') == self.__class__.__name__:
             self.cmd = cmd
             return True
 
