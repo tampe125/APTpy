@@ -44,28 +44,28 @@ class APTpy:
 
         self._checkenv()
 
-        logger.debug("Registering channels")
+        logger.debug("[MAIN] Registering channels")
         self._registerChannels()
 
-        logger.debug("Registering modules")
+        logger.debug("[MAIN] Registering modules")
         self._registerModules()
 
-        logger.debug("Starting channel connection")
+        logger.debug("[MAIN] Starting channel connection")
         self.channel.start()
 
-        logger.debug("Starting all modules")
+        logger.debug("[MAIN] Starting all modules")
         for module in self.modules:
             module.start()
 
         try:
-            logger.debug("Starting main loop")
+            logger.debug("[MAIN] Starting main loop")
             while True:
                 sleep(0.5)
 
                 if not self.queue_recv.empty():
                     cmd = self.queue_recv.get().strip()
 
-                    logger.info("Got command %s from the queue" % cmd)
+                    logger.info("[MAIN] Got command %s from the queue" % cmd)
 
                     self.queue_recv.task_done()
 
@@ -73,13 +73,13 @@ class APTpy:
                         if module.its_for_me(cmd):
                             className = module.__class__.__name__
 
-                            logger.info("Module %s reclaimed the message" % className)
+                            logger.info("[MAIN] Module %s reclaimed the message" % className)
 
                             self.events[className].set()
                             self.events[className].clear()
 
         except BaseException as inner_e:
-            logger.debug("Exception detected, try to stop all threads before bubbling up")
+            logger.debug("[MAIN] Exception detected, try to stop all threads before bubbling up")
 
             self.channel.halt()
             self.channel.join()
