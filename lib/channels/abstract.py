@@ -1,4 +1,5 @@
 import threading
+from lib.exceptions import *
 from logging import getLogger
 from random import randint
 from time import sleep, time, strftime, localtime
@@ -16,21 +17,31 @@ class AbstractChannel(threading.Thread):
         self.connected = False
         self.queue_send = queue_send
         self.queue_recv = queue_recv
-        self.running = True
 
-        # Random time for a connection
-        max_interval = 30
+        self._running = True
+        self._next_try = 0
 
-        if self.debug:
-            max_interval = 1
-
-        self.next_try = (randint(1, max_interval) * 15) + time()
-
-        getLogger('aptpy').debug("[CHANNEL] Next connection attempt will be at %s" %
-                                 strftime("%Y-%m-%d %H:%M:%S", localtime(self.next_try)))
+        self.set_next_time()
 
         # Change it for every client!
         self.queue_file = 'aptpy.queue'
+
+    def halt(self):
+        self._running = False
+
+    def set_next_time(self, max_interval=30):
+        """
+        Sets the next execution time randomly
+        :param max_interval:
+        :return:
+        """
+        if self.debug:
+            max_interval = 1
+
+        self._next_try = (randint(1, max_interval) * 15) + time()
+
+        getLogger('aptpy').debug("[CHANNEL] Next connection attempt will be at %s" %
+                                 strftime("%Y-%m-%d %H:%M:%S", localtime(self._next_try)))
 
     @abstractmethod
     def enabled(self):
@@ -39,9 +50,6 @@ class AbstractChannel(threading.Thread):
         :return:
         """
         return False
-
-    def halt(self):
-        self.running = False
 
     def connect(self):
         pass
@@ -73,35 +81,31 @@ class AbstractChannel(threading.Thread):
         pass
 
     def run(self):
-        while self.running:
+        while self._running:
             sleep(1)
 
-            if time() >= self.next_try:
-                if not self.connected:
-                    self.connect()
-
-                # TODO Break if we're not connected
-
-                # First of all let's get some more work
-                if self.queue_recv.empty():
-                    msg = self.receive()
-                    if msg:
-                        self.queue_recv.put(msg)
-
+            if time() >= self._next_try:
                 try:
-                    self._send()
                     max_interval = 30
+
+                    if not self.connected:
+                        self.connect()
+
+                    # First of all let's get some more work
+                    if self.queue_recv.empty():
+                        msg = self.receive()
+                        if msg:
+                            self.queue_recv.put(msg)
+
+                    self._send()
+                # If we're not authorized stop everything
+                except NotAuthorized as not_auth:
+                    raise not_auth
                 except:
                     # If anything goes wrong try again in a shorter amount of time
                     max_interval = 15
 
-                if self.debug:
-                    max_interval = 1
-
-                self.next_try = (randint(1, max_interval) * 15) + time()
-
-                getLogger('aptpy').debug("[CHANNEL] Next connection attempt will be at %s" %
-                                         strftime("%Y-%m-%d %H:%M:%S", localtime(self.next_try)))
+                self.set_next_time(max_interval)
 
             if not self.queue_send.empty():
                 msg = self.queue_send.get()
