@@ -21,11 +21,12 @@ class APTpy:
         aptpy_logger.setLevel(logging.DEBUG)
 
         # Create a rotation logging, so we won't have and endless file
-        rotate = logging.handlers.RotatingFileHandler('aptpy.log', maxBytes=(5 * 1024 * 1024), backupCount=3)
-        rotate.setLevel(logging.DEBUG)
-        rotate.setFormatter(logging.Formatter('%(asctime)s|%(levelname)-8s| %(message)s', '%Y-%m-%d %H:%M:%S'))
+        if DEBUG:
+            rotate = logging.handlers.RotatingFileHandler('aptpy.log', maxBytes=(5 * 1024 * 1024), backupCount=3)
+            rotate.setLevel(logging.DEBUG)
+            rotate.setFormatter(logging.Formatter('%(asctime)s|%(levelname)-8s| %(message)s', '%Y-%m-%d %H:%M:%S'))
 
-        aptpy_logger.addHandler(rotate)
+            aptpy_logger.addHandler(rotate)
 
         console = logging.StreamHandler()
         console.setLevel(logging.DEBUG)
