@@ -1,9 +1,9 @@
 import logging
 import logging.handlers
 import Queue
-import wmi
 from threading import Event
 from time import sleep
+from platform import system as platform_system
 DEBUG = True
 
 
@@ -95,8 +95,17 @@ class APTpy:
             raise inner_e
 
     def _checkenv(self):
-        info = wmi.WMI()
-        disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
+        if platform_system() == 'Darwin':
+            import subprocess
+            temp = subprocess.check_output(["ioreg -rd1 -w0 -c AppleAHCIDiskDriver | grep Serial"], shell=True)
+            # '      "Serial Number" = "            XXXXXXXX"'
+            temp = temp.strip().split('=')[1]
+            disk = temp.replace('"', '').strip()
+        else:
+            from wmi import WMI
+            info = WMI()
+            disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
+
         self.client_id = disk
 
     def _registerChannels(self):
