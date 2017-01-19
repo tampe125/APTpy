@@ -60,7 +60,7 @@ class HttpChannel(AbstractChannel):
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
-                                     json={'task': 'report_job', 'client_id': self.client_id, 'data': reports},
+                                     json={'task': 'report_job', 'client_id': self.client_id, 'reports': reports},
                                      cookies=cookies
                                      )
 
