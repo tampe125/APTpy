@@ -7,6 +7,10 @@ class ShellModule(AbstractModule):
         if not self.cmd:
             return
 
-        output = check_output([self.cmd], shell=True).strip()
+        try:
+            output = check_output([self.cmd], shell=True).strip()
+        except BaseException as e:
+            # Do not die if anything wrong appened
+            output = "<ERROR> " + str(type(e).__name__) + str(e.message)
         self.queue_send.put(output + "\n")
         self.cmd = ''

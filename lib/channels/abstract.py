@@ -54,7 +54,7 @@ class AbstractChannel(threading.Thread):
         """
         with open(self.queue_file, 'ab') as handle:
             handle.write(message)
-            handle.write("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+            handle.write("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
     @abstractmethod
     def _send(self):
