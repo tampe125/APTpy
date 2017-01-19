@@ -77,6 +77,7 @@ class APTpy:
 
                             self.events[className].set()
                             self.events[className].clear()
+
         except BaseException as inner_e:
             logger.debug("Exception detected, try to stop all threads before bubbling up")
 
@@ -111,7 +112,7 @@ class APTpy:
     def _registerChannels(self):
         from lib.channels.http import HttpChannel
 
-        self.channel = HttpChannel(self.client_id, self.queue_send, self.queue_recv)
+        self.channel = HttpChannel(self.client_id, self.queue_send, self.queue_recv, DEBUG)
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
