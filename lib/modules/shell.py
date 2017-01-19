@@ -1,4 +1,4 @@
-from subprocess import check_output
+from subprocess import check_output, STDOUT
 from abstract import AbstractModule
 
 
@@ -8,7 +8,7 @@ class ShellModule(AbstractModule):
             return
 
         try:
-            output = check_output([self.cmd], shell=True).strip()
+            output = check_output([self.cmd], shell=True, stderr=STDOUT).strip()
         except BaseException as e:
             # Do not die if anything wrong appened
             output = "<ERROR> " + str(type(e).__name__) + str(e.message)
