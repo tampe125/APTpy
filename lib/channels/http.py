@@ -37,9 +37,44 @@ class HttpChannel(AbstractChannel):
             self.connected = False
 
     def _send(self):
-        pass
+        getLogger('aptpy').debug("[HTTP] Trying to report completed jobs")
+
+        reports = []
+        report = ''
+
+        # TODO: Do not read the whole file, but break when we have more than 512Kb of data
+        with open(self.queue_file, 'rb') as handle:
+            for line in handle:
+                if line == '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n':
+                    reports.append(report)
+                    report = ''
+                    continue
+
+                report += line
+
+        # Nothing to report
+        if not reports:
+            return
+
+        try:
+            cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
+
+            response = requests.post(self._remote_host,
+                                     json={'task': 'report_job', 'client_id': self.client_id, 'data': reports},
+                                     cookies=cookies
+                                     )
+
+            if response.status_code != 200:
+                getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
+                self.connected = False
+
+        except requests.ConnectionError:
+            getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
+            self.connected = False
 
     def receive(self):
+        getLogger('aptpy').debug("[HTTP] Trying to get new commands from the remote server")
+
         try:
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
