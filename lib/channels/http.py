@@ -1,6 +1,5 @@
 import logging
 import requests
-from lib.exceptions import *
 from abstract import AbstractChannel
 
 
@@ -19,14 +18,11 @@ class HttpChannel(AbstractChannel):
 
             if response.status_code != 200:
                 logging.getLogger('aptpy').debug("We can't connect to the remote server")
-                raise NotAuthorized()
+                self.connected = False
 
             logging.getLogger('aptpy').debug("Successfully connected to the remote server")
+            self.connected = True
+
         except requests.ConnectionError:
             logging.getLogger('aptpy').debug("An error occurred while contacting the remote server")
-
-    def send(self, message):
-        pass
-
-    def receive(self, size=4096):
-        pass
+            self.connected = False
