@@ -1,6 +1,8 @@
+import sqlite3
 import threading
 from lib.exceptions import *
 from logging import getLogger
+from os.path import exists as file_exists
 from random import randint
 from time import sleep, time, strftime, localtime
 from abc import ABCMeta, abstractmethod
@@ -24,7 +26,7 @@ class AbstractChannel(threading.Thread):
         self.set_next_time()
 
         # Change it for every client!
-        self.queue_file = 'aptpy.queue'
+        self.db_file = 'aptpy.queue'
 
     def halt(self):
         self._running = False
@@ -43,6 +45,15 @@ class AbstractChannel(threading.Thread):
         getLogger('aptpy').debug("[CHANNEL] Next connection attempt will be at %s" %
                                  strftime("%Y-%m-%d %H:%M:%S", localtime(self._next_try)))
 
+    def _create_db(self):
+        conn = sqlite3.connect(self.db_file)
+        cur = conn.cursor()
+
+        cur.execute("CREATE TABLE out(id INTEGER PRIMARY KEY, msg TEXT)")
+
+        conn.commit()
+        conn.close()
+
     @abstractmethod
     def enabled(self):
         """
@@ -60,9 +71,16 @@ class AbstractChannel(threading.Thread):
         :param message:
         :return:
         """
-        with open(self.queue_file, 'ab') as handle:
-            handle.write(message)
-            handle.write("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+        if not file_exists(self.db_file):
+            self._create_db()
+
+        conn = sqlite3.connect(self.db_file)
+        cur = conn.cursor()
+
+        cur.execute("INSERT INTO out (id, msg) VALUES(NULL, ?)", (message, ))
+
+        conn.commit()
+        conn.close()
 
     @abstractmethod
     def _send(self):
@@ -102,7 +120,7 @@ class AbstractChannel(threading.Thread):
                 # If we're not authorized stop everything
                 except NotAuthorized as not_auth:
                     raise not_auth
-                except:
+                except BaseException as e:
                     # If anything goes wrong try again in a shorter amount of time
                     max_interval = 15
 

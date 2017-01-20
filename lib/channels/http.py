@@ -1,4 +1,5 @@
 import requests
+import sqlite3
 from abstract import AbstractChannel
 from logging import getLogger
 
@@ -40,20 +41,18 @@ class HttpChannel(AbstractChannel):
         getLogger('aptpy').debug("[HTTP] Trying to report completed jobs")
 
         reports = []
-        report = ''
+        ids = []
 
-        # TODO: Do not read the whole file, but break when we have more than 512Kb of data
-        with open(self.queue_file, 'rb') as handle:
-            for line in handle:
-                if line == '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n':
-                    reports.append(report)
-                    report = ''
-                    continue
+        conn = sqlite3.connect(self.db_file)
+        cur = conn.cursor()
 
-                report += line
+        for row in cur.execute("SELECT * FROM out LIMIT 5"):
+            ids.append(str(row[0]))
+            reports.append(row[1])
 
         # Nothing to report
         if not reports:
+            conn.close()
             return
 
         try:
@@ -67,10 +66,17 @@ class HttpChannel(AbstractChannel):
             if response.status_code != 200:
                 getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
                 self.connected = False
+            else:
+                if ids:
+                    # Delete sent reports
+                    cur.execute("DELETE FROM out WHERE id IN(%s)" % ",".join(ids))
+                    conn.commit()
 
         except requests.ConnectionError:
             getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
             self.connected = False
+
+        conn.close()
 
     def receive(self):
         getLogger('aptpy').debug("[HTTP] Trying to get new commands from the remote server")
