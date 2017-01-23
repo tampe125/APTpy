@@ -60,10 +60,12 @@ class HttpChannel(AbstractChannel):
             return
 
         try:
+            data = dumps({'task': 'report_job', 'client_id': self.client_id, 'reports': reports})
+            encrypted = encrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
-                                     json={'task': 'report_job', 'client_id': self.client_id, 'reports': reports},
+                                     json=[encrypted['data'], encrypted['sign']],
                                      cookies=cookies
                                      )
 
@@ -86,10 +88,12 @@ class HttpChannel(AbstractChannel):
         getLogger('aptpy').debug("[HTTP] Trying to get new commands from the remote server")
 
         try:
+            data = dumps({'task': 'get_job', 'client_id': self.client_id})
+            encrypted = encrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
-                                     json={'task': 'get_job', 'client_id': self.client_id},
+                                     json=[encrypted['data'], encrypted['sign']],
                                      cookies=cookies
                                      )
 
