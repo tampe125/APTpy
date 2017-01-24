@@ -103,7 +103,7 @@ class APTpy:
             # '      "Serial Number" = "            XXXXXXXX"'
             temp = temp.strip().split('=')[1]
             disk = temp.replace('"', '').strip()
-        elif self.platform == 'win32':
+        elif self.platform == 'Windows':
             from wmi import WMI
             info = WMI()
             disk = info.Win32_PhysicalMedia()[0].SerialNumber.strip()
