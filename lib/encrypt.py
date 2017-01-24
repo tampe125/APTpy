@@ -48,7 +48,7 @@ SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgxgsVGsKcwTT964pSUIF5IU/uX
               '+orK6eBziKe1suPG2ficg6yzvz9iErnqboGGwyxNz5ofo+P+5w4agzjdYN9l2H/IJZ5 '
 
 
-def encrypt(message):
+def RSAencrypt(message):
     # First sign the message
     key = RSA.importKey(PRIV_KEY)
     h = SHA.new()
@@ -63,7 +63,7 @@ def encrypt(message):
     return {'data': b64encode(ciphertext), 'sign': b64encode(signature)}
 
 
-def decrypt(signature, ciphertext):
+def RSAdecrypt(signature, ciphertext):
     ciphertext = b64decode(ciphertext)
 
     key = RSA.importKey(SRV_PUB_KEY)
