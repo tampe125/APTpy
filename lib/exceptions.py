@@ -6,3 +6,7 @@ class NotAuthorized(Exception):
 
 class RSAFailedSignature(Exception):
     pass
+
+
+class AESFailedSignature(Exception):
+    pass

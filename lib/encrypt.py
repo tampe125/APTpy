@@ -1,13 +1,15 @@
 from base64 import b64decode, b64encode
-from Crypto.Cipher import PKCS1_OAEP
+from Crypto import Random
+from Crypto.Cipher import PKCS1_OAEP, AES
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_PSS
 from Crypto.Hash import SHA
-from exceptions import RSAFailedSignature
+from exceptions import *
 
+BS = 16
 
 # Remember to change them for every client!
-PRIV_KEY = """-----BEGIN RSA PRIVATE KEY-----
+CLIENT_PRIV_KEY = """-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAsyP0rCgIivGiMZbLxriIOQXkHxydG9R3wQvwXkZYBgDLOrBk
 3smyN6lI0eK0LoiK4wAuZctu+Q3xIV+iYEQj/Ms1LyIOLmmKlQyCj/uSSUenTTjS
 Mv9FDcDWpwI+xZrdU4TtjfXxCZ9QHc3qnjQ3o30QdUbWH2r2UuR9EtarrB52kgWW
@@ -35,11 +37,11 @@ Gt+f0ZpHyqUc42S8VFzIyc/SR+b744O/qvSrRgy6tuFOwjTfDAH8wmTX+Q0PPNbw
 Nm4lyAoq5NiTv+gjSaQcMn4N8rScESlSAn/Wm4zbb8bXQZn9oG1eKw==
 -----END RSA PRIVATE KEY-----
 """
-PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzI/SsKAiK8aIxlsvGuIg5BeQfHJ0b1HfBC' \
-          '/BeRlgGAMs6sGTeybI3qUjR4rQuiIrjAC5ly275DfEhX6JgRCP8yzUvIg4uaYqVDIKP+5JJR6dNONIy' \
-          '/0UNwNanAj7Fmt1ThO2N9fEJn1AdzeqeNDejfRB1RtYfavZS5H0S1qusHnaSBZaws6MGZ6tRxP3vNpj9v94+Sz+K1+i' \
-          '+N8GauLr8uMKajTcJDVFXEm9QPoys06kCHJYezrYMeECpAy/U02QtGuaRHW1wKTsE39nT2++57TCI7yJkBuMc5' \
-          '/MG1tcsU7yHeUVwr5hcpzaXYO+YtUvqtwk812Kkw5uHBY//izBl'
+CLIENT_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzI/SsKAiK8aIxlsvGuIg5BeQfHJ0b1HfBC' \
+                 '/BeRlgGAMs6sGTeybI3qUjR4rQuiIrjAC5ly275DfEhX6JgRCP8yzUvIg4uaYqVDIKP+5JJR6dNONIy' \
+                 '/0UNwNanAj7Fmt1ThO2N9fEJn1AdzeqeNDejfRB1RtYfavZS5H0S1qusHnaSBZaws6MGZ6tRxP3vNpj9v94+Sz+K1+i' \
+                 '+N8GauLr8uMKajTcJDVFXEm9QPoys06kCHJYezrYMeECpAy/U02QtGuaRHW1wKTsE39nT2++57TCI7yJkBuMc5' \
+                 '/MG1tcsU7yHeUVwr5hcpzaXYO+YtUvqtwk812Kkw5uHBY//izBl'
 
 SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgxgsVGsKcwTT964pSUIF5IU/uXOPJCgKg8M+wfTn8dngqr2' \
               '+qXTGstHb3t80MO5sOtO5IZCzsLhpZhIJouNcfDFsHH3f64adoCSFWfhBCm0kBTToWhS4NV8j9Caj0NA5Ax34QB/vFL8R4J' \
@@ -50,11 +52,7 @@ SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgxgsVGsKcwTT964pSUIF5IU/uX
 
 def RSAencrypt(message):
     # First sign the message
-    key = RSA.importKey(PRIV_KEY)
-    h = SHA.new()
-    h.update(message)
-    signer = PKCS1_PSS.new(key)
-    signature = signer.sign(h)
+    signature = _create_signature(message)
 
     key = RSA.importKey(SRV_PUB_KEY)
     cipher = PKCS1_OAEP.new(key)
@@ -67,16 +65,63 @@ def RSAdecrypt(ciphertext, signature):
     ciphertext = b64decode(ciphertext)
     signature = b64decode(signature)
 
-    key = RSA.importKey(PRIV_KEY)
+    key = RSA.importKey(CLIENT_PRIV_KEY)
     cipher = PKCS1_OAEP.new(key)
     message = cipher.decrypt(ciphertext)
 
+    if not _verify_signature(message, signature):
+        raise RSAFailedSignature
+
+    return message
+
+
+def AESencrypt(message, key):
+    signature = _create_signature(message)
+
+    message = _pad(message)
+    iv = Random.new().read(AES.block_size)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ciphertext = iv + cipher.encrypt(message)
+
+    return {'data': b64encode(ciphertext), 'signature': b64encode(signature)}
+
+
+def AESdecrypt(ciphertext, signature, key):
+    ciphertext = b64decode(ciphertext)
+    signature = b64decode(signature)
+
+    iv = ciphertext[:16]
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    message = _unpad(cipher.decrypt(ciphertext[16:]))
+
+    if not _verify_signature(message, signature):
+        raise AESFailedSignature
+
+    return message
+
+
+def _create_signature(message):
+    key = RSA.importKey(CLIENT_PRIV_KEY)
+    h = SHA.new()
+    h.update(message)
+    signer = PKCS1_PSS.new(key)
+
+    return signer.sign(h)
+
+
+def _verify_signature(message, signature):
     key = RSA.importKey(SRV_PUB_KEY)
     h = SHA.new()
     h.update(message)
     verifier = PKCS1_PSS.new(key)
 
-    if not verifier.verify(h, signature):
-        raise RSAFailedSignature
+    return verifier.verify(h, signature)
 
-    return message
+
+def _pad(s):
+    return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+
+
+def _unpad(s):
+    return s[:-ord(s[len(s) - 1:])]
+
