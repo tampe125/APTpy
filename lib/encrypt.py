@@ -41,11 +41,11 @@ PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzI/SsKAiK8aIxlsvGuIg5BeQfHJ0b1
           '+N8GauLr8uMKajTcJDVFXEm9QPoys06kCHJYezrYMeECpAy/U02QtGuaRHW1wKTsE39nT2++57TCI7yJkBuMc5' \
           '/MG1tcsU7yHeUVwr5hcpzaXYO+YtUvqtwk812Kkw5uHBY//izBl'
 
-SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDr10t2tisgptNNMq3m8yw9BJ/KwegEcTF50VM6i9Ba' \
-              '/PK6Y2wH1MSkA6OB2T30LmbxCDfzjEm8xxazM+HnrM2RA1VGShJFvgQDm0UAjGWZ9Dmp2AAwdvu5' \
-              '/QzDRorqs3CK0iYjFPjzLAQlXUeo6nr87Jtul5EyCSWjNQHClgKQ4mJ9uwi8QGNwnfmbJ8ypmn2eLc7OyWH1gNxgOoHB' \
-              'qvEoQ2kNx8mGL3sC4I0kfUTY3zK8D4ON+b9RojnlUYUF3ftGUxyZjmQah6GU6LLXnEdZtjJVbYnWxcN3Z+FvvrZfM+WgzZ' \
-              '6XN3uplj+4UO5OiOXDBy06zcC1OIs0tU13z4tn'
+SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgxgsVGsKcwTT964pSUIF5IU/uXOPJCgKg8M+wfTn8dngqr2' \
+              '+qXTGstHb3t80MO5sOtO5IZCzsLhpZhIJouNcfDFsHH3f64adoCSFWfhBCm0kBTToWhS4NV8j9Caj0NA5Ax34QB/vFL8R4J' \
+              '/B0x2BfBo7QIWO2HoKc+EHjTWqf6lyxEzXqCVyW03M5ofo1KNtduHmxWK9wS' \
+              '/2tHVkAlLCFUJzZBZCgmCrYviTMsndigxTQ0EHSWXVeqNh5OBMza1HM2+6kOZVof7/0Ot1Rd' \
+              '+orK6eBziKe1suPG2ficg6yzvz9iErnqboGGwyxNz5ofo+P+5w4agzjdYN9l2H/IJZ5 '
 
 
 def encrypt(message):
