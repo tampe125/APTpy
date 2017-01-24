@@ -45,7 +45,7 @@ SRV_PUB_KEY = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDgxgsVGsKcwTT964pSUIF5IU/uX
               '+qXTGstHb3t80MO5sOtO5IZCzsLhpZhIJouNcfDFsHH3f64adoCSFWfhBCm0kBTToWhS4NV8j9Caj0NA5Ax34QB/vFL8R4J' \
               '/B0x2BfBo7QIWO2HoKc+EHjTWqf6lyxEzXqCVyW03M5ofo1KNtduHmxWK9wS' \
               '/2tHVkAlLCFUJzZBZCgmCrYviTMsndigxTQ0EHSWXVeqNh5OBMza1HM2+6kOZVof7/0Ot1Rd' \
-              '+orK6eBziKe1suPG2ficg6yzvz9iErnqboGGwyxNz5ofo+P+5w4agzjdYN9l2H/IJZ5 '
+              '+orK6eBziKe1suPG2ficg6yzvz9iErnqboGGwyxNz5ofo+P+5w4agzjdYN9l2H/IJZ5'
 
 
 def RSAencrypt(message):
@@ -63,19 +63,20 @@ def RSAencrypt(message):
     return {'data': b64encode(ciphertext), 'sign': b64encode(signature)}
 
 
-def RSAdecrypt(signature, ciphertext):
+def RSAdecrypt(ciphertext, signature):
     ciphertext = b64decode(ciphertext)
-
-    key = RSA.importKey(SRV_PUB_KEY)
-    h = SHA.new()
-    h.update(ciphertext)
-    verifier = PKCS1_PSS.new(key)
-
-    if not verifier.verify(h, signature):
-        raise RSAFailedSignature
+    signature = b64decode(signature)
 
     key = RSA.importKey(PRIV_KEY)
     cipher = PKCS1_OAEP.new(key)
     message = cipher.decrypt(ciphertext)
+
+    key = RSA.importKey(SRV_PUB_KEY)
+    h = SHA.new()
+    h.update(message)
+    verifier = PKCS1_PSS.new(key)
+
+    if not verifier.verify(h, signature):
+        raise RSAFailedSignature
 
     return message
