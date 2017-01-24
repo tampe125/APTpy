@@ -1,9 +1,10 @@
 import requests
 import sqlite3
 from abstract import AbstractChannel
-from logging import getLogger
 from json import dumps
 from lib.encrypt import encrypt, decrypt
+from logging import getLogger
+from os.path import exists as file_exists
 
 
 class HttpChannel(AbstractChannel):
@@ -46,6 +47,10 @@ class HttpChannel(AbstractChannel):
 
         reports = []
         ids = []
+
+        # Init the db if it doesn't exist
+        if not file_exists(self.db_file):
+            self._create_db()
 
         conn = sqlite3.connect(self.db_file)
         cur = conn.cursor()
