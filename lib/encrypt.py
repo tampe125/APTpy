@@ -76,6 +76,7 @@ def RSAdecrypt(ciphertext, signature):
 
 
 def AESencrypt(message, key):
+    key = b64decode(key)
     signature = _create_signature(message)
 
     message = _pad(message)
@@ -83,10 +84,11 @@ def AESencrypt(message, key):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     ciphertext = iv + cipher.encrypt(message)
 
-    return {'data': b64encode(ciphertext), 'signature': b64encode(signature)}
+    return {'data': b64encode(ciphertext), 'sign': b64encode(signature)}
 
 
 def AESdecrypt(ciphertext, signature, key):
+    key = b64decode(key)
     ciphertext = b64decode(ciphertext)
     signature = b64decode(signature)
 

