@@ -16,7 +16,7 @@ class AbstractChannel(threading.Thread):
 
         self.debug = debug
         self.client_id = client_id
-        self.connected = False
+        self._key = None
         self.queue_send = queue_send
         self.queue_recv = queue_recv
 
@@ -112,20 +112,22 @@ class AbstractChannel(threading.Thread):
                 try:
                     max_interval = 30
 
-                    if not self.connected:
+                    if not self._key:
                         self.connect()
 
-                    # First of all let's get some more work
-                    if self.queue_recv.empty():
-                        messages = self.receive()
-                        if messages:
-                            for msg in messages:
-                                self.queue_recv.put(msg)
+                    # Perform remote actions only if we have a key
+                    if self._key:
+                        # First of all let's get some more work
+                        if self.queue_recv.empty():
+                            messages = self.receive()
+                            if messages:
+                                for msg in messages:
+                                    self.queue_recv.put(msg)
 
-                    self._send()
-                # If we're not authorized stop everything
-                except NotAuthorized as not_auth:
-                    raise not_auth
+                        self._send()
+                # If we any of those exceptions was raised stop everything
+                except (NotAuthorized, RSAFailedSignature) as fatal_error:
+                    raise fatal_error
                 except BaseException as e:
                     # If anything goes wrong try again in a shorter amount of time
                     max_interval = 15

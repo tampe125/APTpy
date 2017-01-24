@@ -1,7 +1,7 @@
 import requests
 import sqlite3
 from abstract import AbstractChannel
-from json import dumps
+from json import dumps, loads
 from lib.encrypt import RSAencrypt, RSAdecrypt
 from logging import getLogger
 from os.path import exists as file_exists
@@ -33,14 +33,16 @@ class HttpChannel(AbstractChannel):
 
             if response.status_code != 200:
                 getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
-                self.connected = False
+                self._key = None
 
-            getLogger('aptpy').debug("[HTTP] Successfully connected to the remote server")
-            self.connected = True
+            getLogger('aptpy').debug("[HTTP] Got the key from the remote server")
 
+            data = response.json()
+            data = loads(RSAdecrypt(data[0], data[1]))
+            self._key = data.pop()
         except requests.ConnectionError:
             getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
-            self.connected = False
+            self._key = None
 
     def _send(self):
         getLogger('aptpy').debug("[HTTP] Trying to report completed jobs")
@@ -76,7 +78,7 @@ class HttpChannel(AbstractChannel):
 
             if response.status_code != 200:
                 getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
-                self.connected = False
+                self._key = None
             else:
                 if ids:
                     # Delete sent reports
@@ -85,7 +87,7 @@ class HttpChannel(AbstractChannel):
 
         except requests.ConnectionError:
             getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
-            self.connected = False
+            self._key = None
 
         conn.close()
 
@@ -104,11 +106,11 @@ class HttpChannel(AbstractChannel):
 
             if response.status_code != 200:
                 getLogger('aptpy').debug("[HTTP] We can't connect to the remote server")
-                self.connected = False
+                self._key = None
                 return
 
             return response.json()
 
         except requests.ConnectionError:
             getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
-            self.connected = False
+            self._key = None
