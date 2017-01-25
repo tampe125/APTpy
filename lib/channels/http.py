@@ -110,7 +110,10 @@ class HttpChannel(AbstractChannel):
                 self._key = None
                 return
 
-            return response.json()
+            raw_data = response.json()
+            raw_data = AESdecrypt(raw_data[0], raw_data[1], self._key)
+
+            return loads(raw_data)
 
         except requests.ConnectionError:
             getLogger('aptpy').debug("[HTTP] An error occurred while contacting the remote server")
