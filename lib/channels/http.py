@@ -14,9 +14,19 @@ class HttpChannel(AbstractChannel):
         self._remote_host = 'http://localhost:8000/'
 
     def enabled(self):
-        response = requests.get('https://www.google.com')
+        try:
+            response = requests.get('https://www.google.com')
 
-        return response.status_code == 200
+            # We have general internet connection
+            if response.status_code != 200:
+                return False
+
+            # Let's see if the remote host is reachable
+            response = requests.get(self._remote_host)
+
+            return response.status_code == 200
+        except (requests.ConnectionError, requests.ConnectTimeout):
+            return False
 
     def connect(self):
         getLogger('aptpy').debug("[HTTP] Trying to contact the remote server")

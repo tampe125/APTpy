@@ -62,6 +62,7 @@ class AbstractChannel(threading.Thread):
         """
         return False
 
+    @abstractmethod
     def connect(self):
         pass
 
