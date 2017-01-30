@@ -1,8 +1,12 @@
 import imaplib
 import smtplib
 from abstract import AbstractChannel
+from base64 import b64decode, b64encode
 from email.mime.text import MIMEText
 from email import message_from_string
+from json import dumps
+from lib.encrypt import RSAencrypt, RSAdecrypt, AESencrypt, AESdecrypt
+from logging import getLogger
 
 
 class MailChannel(AbstractChannel):
@@ -18,12 +22,23 @@ class MailChannel(AbstractChannel):
         return True
 
     def connect(self):
+        getLogger('aptpy').debug("[MAIL] Trying to contact the remote server")
 
-        body = "test test"
-        subject = 'Test'
+        self._get_emails()
+
+        # Do we have a key? If so we can stop here
+        if self._key:
+            return
+
+        data = dumps({'task': 'ping', 'client_id': self.client_id})
+        encrypted = RSAencrypt(data)
+
+        body = encrypted['data'] + "\n~~~~~~~~~~~~~~~~~~~~\n" + encrypted['sign']
+        body += "\n~~~~~~~~~~~~~~~~~~~~"
+
+        subject = b64encode(self.client_id)
 
         self._send_email(body, subject)
-        self._get_emails()
 
     def _send(self):
         pass
@@ -36,16 +51,20 @@ class MailChannel(AbstractChannel):
         rv, data = mailer.login(self.settings['imap']['user'], self.settings['imap']['password'])
 
         mailer.select('INBOX')
-        (retcode, messages) = mailer.search(None, '(UNSEEN)')
+        (retcode, messages) = mailer.search(None, '(ALL)')
 
         if retcode == 'OK':
             for num in messages[0].split():
                 typ, data = mailer.fetch(num, '(RFC822)')
                 original = message_from_string(data[0][1])
 
+                # The subject will contain the client_id in base64 format
+                if b64decode(original['Subject']) != str(self.client_id):
+                    continue
+
                 body = original.get_payload()
 
-                typ, data = mailer.store(num, '+FLAGS', '\\Seen')
+                typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
 
         mailer.expunge()
         mailer.close()
