@@ -17,6 +17,8 @@ class MailChannel(AbstractChannel):
             settings = {}
 
         self.settings = settings
+        self.connection_requested = False
+        self.delimiter = "\n~~~~~~~~~~~~~~~~~~~~\n"
 
     def enabled(self):
         return True
@@ -30,15 +32,16 @@ class MailChannel(AbstractChannel):
         if self._key:
             return
 
-        data = dumps({'task': 'ping', 'client_id': self.client_id})
-        encrypted = RSAencrypt(data)
+        # Send the "ping" email just once
+        if not self.connection_requested:
+            self.connection_requested = True
+            data = dumps({'task': 'ping', 'client_id': self.client_id})
+            encrypted = RSAencrypt(data)
 
-        body = encrypted['data'] + "\n~~~~~~~~~~~~~~~~~~~~\n" + encrypted['sign']
-        body += "\n~~~~~~~~~~~~~~~~~~~~"
+            body = encrypted['data'] + self.delimiter + encrypted['sign'] + self.delimiter
+            subject = b64encode(self.client_id)
 
-        subject = b64encode(self.client_id)
-
-        self._send_email(body, subject)
+            self._send_email(body, subject)
 
     def _send(self):
         pass
@@ -53,18 +56,24 @@ class MailChannel(AbstractChannel):
         mailer.select('INBOX')
         (retcode, messages) = mailer.search(None, '(ALL)')
 
+        my_subject = 'R:' + b64encode(str(self.client_id))
+
         if retcode == 'OK':
             for num in messages[0].split():
                 typ, data = mailer.fetch(num, '(RFC822)')
                 original = message_from_string(data[0][1])
 
-                # The subject will contain the client_id in base64 format
-                if b64decode(original['Subject']) != str(self.client_id):
+                # Skip messages that aren't for me
+                if original['Subject'] != my_subject:
                     continue
 
                 body = original.get_payload()
 
-                typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
+                # Message with invalid body
+                if body.count(self.delimiter) < 2 or body.count(self.delimiter) > 3:
+                    continue
+
+                # typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
 
         mailer.expunge()
         mailer.close()

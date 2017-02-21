@@ -25,7 +25,7 @@ class HttpChannel(AbstractChannel):
             response = requests.get(self._remote_host)
 
             return response.status_code == 200
-        except (requests.ConnectionError, requests.ConnectTimeout):
+        except (requests.ConnectionError):
             return False
 
     def connect(self):
