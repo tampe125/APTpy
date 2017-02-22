@@ -60,6 +60,10 @@ class APTpy:
         logger.debug("[MAIN] Registering channels")
         self._registerChannels()
 
+        if not self.channel:
+            logger.debug("[MAIN] No channel available. Quitting.")
+            return
+
         logger.debug("[MAIN] Registering modules")
         self._registerModules()
 
@@ -131,6 +135,9 @@ class APTpy:
         # If we can't contact the server, fallback to mail
         if not self.channel.enabled():
             self.channel = MailChannel(self.client_id, self.queue_send, self.queue_recv, DEBUG, self.settings)
+
+            if not self.channel.enabled():
+                self.channel = None
 
     def _registerModules(self):
         from lib.modules.shell import ShellModule
