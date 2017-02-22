@@ -4,7 +4,7 @@ from abstract import AbstractChannel
 from base64 import b64decode, b64encode
 from email.mime.text import MIMEText
 from email import message_from_string
-from json import dumps
+from json import dumps, loads
 from lib.encrypt import RSAencrypt, RSAdecrypt, AESencrypt, AESdecrypt
 from logging import getLogger
 
@@ -18,7 +18,7 @@ class MailChannel(AbstractChannel):
 
         self.settings = settings
         self.connection_requested = False
-        self.delimiter = "\n~~~~~~~~~~~~~~~~~~~~\n"
+        self.delimiter = "~~~~~~~~~~~~~~~~~~~~"
 
     def enabled(self):
         return True
@@ -26,7 +26,14 @@ class MailChannel(AbstractChannel):
     def connect(self):
         getLogger('aptpy').debug("[MAIL] Trying to contact the remote server")
 
-        self._get_emails()
+        message = self._get_emails(2)
+
+        if message:
+            encrypted = message.pop().split(self.delimiter)
+            plain = RSAdecrypt(encrypted[0], encrypted[1])
+
+            if plain:
+                self._key = loads(plain).pop()
 
         # Do we have a key? If so we can stop here
         if self._key:
@@ -38,7 +45,7 @@ class MailChannel(AbstractChannel):
             data = dumps({'task': 'ping', 'client_id': self.client_id})
             encrypted = RSAencrypt(data)
 
-            body = encrypted['data'] + self.delimiter + encrypted['sign'] + self.delimiter
+            body = encrypted['data'] + "\n" + self.delimiter + "\n" + encrypted['sign'] + self.delimiter + "\n"
             subject = b64encode(self.client_id)
 
             self._send_email(body, subject)
@@ -49,7 +56,8 @@ class MailChannel(AbstractChannel):
     def receive(self):
         pass
 
-    def _get_emails(self):
+    def _get_emails(self, parts):
+        results = []
         mailer = imaplib.IMAP4_SSL(self.settings['imap']['host'])
         rv, data = mailer.login(self.settings['imap']['user'], self.settings['imap']['password'])
 
@@ -67,17 +75,22 @@ class MailChannel(AbstractChannel):
                 if original['Subject'] != my_subject:
                     continue
 
-                body = original.get_payload()
+                body = original.get_payload(decode=True)
 
                 # Message with invalid body
                 if body.count(self.delimiter) < 2 or body.count(self.delimiter) > 3:
                     continue
 
-                # typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
+                if body.count(self.delimiter) == parts:
+                    results.append(body)
+                    typ, data = mailer.store(num, '+FLAGS', '\\Deleted')
+                    break
 
         mailer.expunge()
         mailer.close()
         mailer.logout()
+
+        return results
 
     def _send_email(self, body, subject):
         address = self.settings['address']
