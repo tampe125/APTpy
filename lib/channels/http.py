@@ -78,11 +78,12 @@ class HttpChannel(AbstractChannel):
 
         try:
             data = dumps({'task': 'report_job', 'client_id': self.client_id, 'reports': reports})
-            encrypted = RSAencrypt(data)
+            encrypted = AESencrypt(data, self._key)
+            rsa_encrypted = RSAencrypt(str(self.client_id))
             cookies = {'XDEBUG_SESSION': 'PHPSTORM'} if self.debug else {}
 
             response = requests.post(self._remote_host,
-                                     json=[encrypted['data'], encrypted['sign']],
+                                     json=[encrypted['data'], encrypted['sign'], rsa_encrypted['data']],
                                      cookies=cookies
                                      )
 
