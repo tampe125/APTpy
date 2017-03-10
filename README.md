@@ -37,3 +37,6 @@ This will suppress the output and increase the delay between the calls.
 
 **Change remote host for HTTP channel**  
 Open [http.py](https://github.com/tampe125/APTpy/blob/master/lib/channels/http.py) file and change the variable `self._remote_host` with your server.
+
+**Change public and private keys**
+Open [encrypt.py](https://github.com/tampe125/APTpy/blob/master/lib/encrypt.py) file and change the variables `CLIENT_PRIV_KEY`, `CLIENT_PUB_KEY`, `SRV_PUB_KEY`. Ideally, you should create your own public/private pairs for each client and change the main server pairs, too.
