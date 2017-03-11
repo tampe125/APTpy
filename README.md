@@ -27,6 +27,7 @@ tampe125@Death-Star:~/git/APTpy$ python aptpy.py
 2017-03-09 12:37:42|DEBUG   | [HTTP] Trying to report completed jobs
 2017-03-09 12:37:43|DEBUG   | [CHANNEL] Next connection attempt will be at 2017-03-09 12:37:58
 ```
+**Please note: the client is compatible with Window only.**
 
 ## Required changes
 In order to keep interaction with the filesystem low, some values are hardcoded, so you'll have to change it accordingly to your needs.
